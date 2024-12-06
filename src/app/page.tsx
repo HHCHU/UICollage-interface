@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useState } from "react";
 import { ImageUploader } from "@/components/ImageUploader";
 import { ImagePreview } from "@/components/ImagePreview";
@@ -12,7 +13,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleImageUpload = (
-    e: React.ChangeEvent<HTMLInputElement> | DragEvent
+    e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
   ) => {
     e.preventDefault();
     let files: File[];
@@ -113,7 +114,7 @@ export default function Home() {
                   분석 중...
                 </span>
               ) : (
-                "이미지 분석하기"
+                "레퍼런스 찾아보기"
               )}
             </button>
           </section>

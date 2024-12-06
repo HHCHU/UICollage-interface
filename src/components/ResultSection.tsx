@@ -1,3 +1,4 @@
+import React from "react";
 import Image from "next/image";
 
 interface ResultSectionProps {
@@ -29,7 +30,7 @@ export function ResultSection({ images }: ResultSectionProps) {
       ) : (
         <div className="h-[calc(100%-4rem)] flex items-center justify-center">
           <p className="text-gray-400">
-            이미지를 업로드하고 분석을 시작해주세요
+            이미지를 업로드하고 레퍼런스를 찾아보세요
           </p>
         </div>
       )}

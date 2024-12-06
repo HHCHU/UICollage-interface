@@ -1,14 +1,16 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
 interface ImageUploaderProps {
-  onImageUpload: (e: React.ChangeEvent<HTMLInputElement> | DragEvent) => void;
+  onImageUpload: (
+    e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
+  ) => void;
   disabled: boolean;
 }
 
 export function ImageUploader({ onImageUpload, disabled }: ImageUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
 
-  const handleDrag = (e: React.DragEvent) => {
+  const handleDrag = (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -36,7 +38,8 @@ export function ImageUploader({ onImageUpload, disabled }: ImageUploaderProps) {
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
-        onDrop={(e) => {
+        onDrop={(e: React.DragEvent<HTMLLabelElement>) => {
+          e.preventDefault();
           handleDrag(e);
           onImageUpload(e);
         }}
