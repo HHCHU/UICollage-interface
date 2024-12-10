@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Test Python Server</title>
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, 
+                     Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+        margin: 0;
+        padding: 0;
+        background-color: #fafbfc;
+        color: #24292e;
+    }
+
+    /* GitHub-style header */
+    header {
+        background-color: #24292e;
+        color: #fff;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    main {
+        display: flex;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    /* Left column: 3 input images */
+    .input-section {
+        width: 40%;
+        padding: 10px;
+        border-right: 1px solid #d1d5da;
+    }
+
+    .input-section h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .image-inputs {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .image-inputs div {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .image-preview {
+        width: 100px;
+        height: 100px;
+        border: 1px solid #ccc;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* Right column: 3x3 output images */
+    .output-section {
+        width: 60%;
+        padding: 10px;
+    }
+
+    .output-section h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .output-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-gap: 10px;
+    }
+
+    .output-grid img {
+        width: 100%;
+        height: auto;
+        border: 1px solid #ccc;
+        background: #fff;
+    }
+
+    /* Bottom bar */
+    footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background-color: #f6f8fa;
+        border-top: 1px solid #d1d5da;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-sizing: border-box;
+    }
+
+    footer input[type="text"] {
+        padding: 5px;
+        border: 1px solid #d1d5da;
+        border-radius: 3px;
+        font-size: 14px;
+    }
+
+    footer button {
+        padding: 5px 10px;
+        background-color: #2ea44f;
+        border: 1px solid #1b1f23;
+        border-radius: 6px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    footer button:disabled {
+        background-color: #94d3a2;
+        cursor: not-allowed;
+    }
+
+    textarea#log {
+        width: 300px;
+        height: 60px;
+        border: 1px solid #d1d5da;
+        border-radius: 3px;
+        font-size: 14px;
+        padding: 5px;
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width:100%;
+        height:100%;
+        background: rgba(255,255,255,0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        font-size: 20px;
+        color: #24292e;
+        z-index: 9999;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Python Server Test</h1>
+</header>
+
+<main>
+    <div class="input-section">
+        <h2>Input Images (3)</h2>
+        <div class="image-inputs">
+            <div>
+                <input type="file" accept="image/*" id="inputImage1">
+                <img id="preview1" class="image-preview" alt="Preview 1"/>
+            </div>
+            <div>
+                <input type="file" accept="image/*" id="inputImage2">
+                <img id="preview2" class="image-preview" alt="Preview 2"/>
+            </div>
+            <div>
+                <input type="file" accept="image/*" id="inputImage3">
+                <img id="preview3" class="image-preview" alt="Preview 3"/>
+            </div>
+        </div>
+    </div>
+    <div class="output-section">
+        <h2>Output Images (3x3)</h2>
+        <div class="output-grid" id="outputGrid">
+            <!-- 9 images (3x3) -->
+            <img src="" id="out1" alt="Output 1"/>
+            <img src="" id="out2" alt="Output 2"/>
+            <img src="" id="out3" alt="Output 3"/>
+            <img src="" id="out4" alt="Output 4"/>
+            <img src="" id="out5" alt="Output 5"/>
+            <img src="" id="out6" alt="Output 6"/>
+            <img src="" id="out7" alt="Output 7"/>
+            <img src="" id="out8" alt="Output 8"/>
+            <img src="" id="out9" alt="Output 9"/>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <button id="sendImagesBtn">Send Image</button>
+    <button id="sendImageTestBtn">Send Image Test</button>
+    <button id="pingBtn">Ping Server</button>
+    <span>IP:</span><input type="text" id="ipField" value="0.0.0.0">
+    <span>Port:</span><input type="text" id="portField" value="5000">
+    <textarea id="log" placeholder="Server Log"></textarea>
+</footer>
+
+<div class="loading-overlay" id="loadingOverlay">Loading...</div>
+
+<script>
+    const previewElements = [
+        document.getElementById('preview1'),
+        document.getElementById('preview2'),
+        document.getElementById('preview3')
+    ];
+
+    const inputElements = [
+        document.getElementById('inputImage1'),
+        document.getElementById('inputImage2'),
+        document.getElementById('inputImage3')
+    ];
+
+    const outputElements = [
+        document.getElementById('out1'),
+        document.getElementById('out2'),
+        document.getElementById('out3'),
+        document.getElementById('out4'),
+        document.getElementById('out5'),
+        document.getElementById('out6'),
+        document.getElementById('out7'),
+        document.getElementById('out8'),
+        document.getElementById('out9'),
+    ];
+
+    const sendImagesBtn = document.getElementById('sendImagesBtn');
+    const sendImageTestBtn = document.getElementById('sendImageTestBtn');
+    const pingBtn = document.getElementById('pingBtn');
+    const ipField = document.getElementById('ipField');
+    const portField = document.getElementById('portField');
+    const logArea = document.getElementById('log');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    // Update previews when files are selected
+    inputElements.forEach((inputEl, index) => {
+        inputEl.addEventListener('change', () => {
+            const file = inputEl.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewElements[index].src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewElements[index].src = '';
+            }
+        });
+    });
+
+    function logMessage(msg) {
+        logArea.value += msg + "\n";
+        logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    function getBaseURL() {
+        const ip = ipField.value.trim();
+        const port = portField.value.trim();
+        return `http://${ip}:${port}`;
+    }
+
+    function showLoading(show) {
+        loadingOverlay.style.display = show ? 'flex' : 'none';
+        sendImagesBtn.disabled = show;
+        sendImageTestBtn.disabled = show;
+        pingBtn.disabled = show;
+    }
+
+    async function pingServer() {
+        const url = getBaseURL() + '/ping';
+        showLoading(true);
+        logMessage("Pinging server...");
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            logMessage("Ping Response: " + JSON.stringify(data));
+        } catch (e) {
+            logMessage("Ping Error: " + e.message);
+        }
+        showLoading(false);
+    }
+
+    async function sendImageTest() {
+        const url = getBaseURL() + '/calculation-test';
+        showLoading(true);
+        logMessage("Requesting test images from server...");
+        try {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const data = await resp.json();
+            if (resp.ok && data.images && data.images.length === 9) {
+                logMessage("Received test images.");
+                // Set the outputs
+                for (let i = 0; i < 9; i++) {
+                    outputElements[i].src = "data:image/jpg;base64," + data.images[i];
+                }
+            } else {
+                logMessage("Unexpected response or error: " + JSON.stringify(data));
+            }
+        } catch (e) {
+            logMessage("Error in test request: " + e.message);
+        }
+        showLoading(false);
+    }
+
+    async function sendImages() {
+        // Collect 3 images from the left inputs
+        let base64Images = [];
+        for (let i = 0; i < 3; i++) {
+            const file = inputElements[i].files[0];
+            if (!file) {
+                logMessage("Please select all 3 images before sending.");
+                return;
+            }
+        }
+
+        showLoading(true);
+        logMessage("Reading images...");
+
+        try {
+            for (let i = 0; i < 3; i++) {
+                base64Images.push(await fileToBase64(inputElements[i].files[0]));
+            }
+
+            logMessage("Sending images to server...");
+            const url = getBaseURL() + '/calculation';
+
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ images: base64Images })
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok && data.images && data.images.length === 9) {
+                // We have 9 images in a single array
+                for (let i = 0; i < 9; i++) {
+                    outputElements[i].src = "data:image/jpg;base64," + data.images[i];
+                }
+                logMessage("Images received and updated.");
+            } else {
+                logMessage("Error: " + JSON.stringify(data));
+            }
+
+        } catch (e) {
+            logMessage("Error in send images request: " + e.message);
+        }
+        showLoading(false);
+    }
+
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                // event.target.result is dataURL like: data:image/png;base64,iVBORw0...
+                // We need to remove the prefix "data:image/xxx;base64,"
+                const dataURL = event.target.result;
+                const base64 = dataURL.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    pingBtn.addEventListener('click', pingServer);
+    sendImageTestBtn.addEventListener('click', sendImageTest);
+    sendImagesBtn.addEventListener('click', sendImages);
+
+    // Initialize placeholders
+    outputElements.forEach(el => {
+        el.src = "";
+        el.style.background = "#eee url('data:image/svg+xml,%3Csvg width%3D%22100%22 height%3D%22100%22 xmlns%3D%22http://www.w3.org/2000/svg%22%3E%3Crect width%3D%22100%22 height%3D%22100%22 fill%3D%22%23eee%22/%3E%3Ctext x%3D%2250%25%22 y%3D%2250%25%22 fill%3D%22%23999%22 font-size%3D%2210%22 dy%3D%22.3em%22 text-anchor%3D%22middle%22%3EPlaceholder%3C/text%3E%3C/svg%3E') no-repeat center";
+        el.style.backgroundSize = "40px 40px";
+    });
+</script>
+</body>
+</html>
