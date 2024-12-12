@@ -88,8 +88,7 @@ export const sendImages = async (
     const base64Images = await Promise.all(files.map(fileToBase64));
     console.log("Files converted successfully");
 
-    // 프록시 API 엔드포인트로 요청
-    const response = await fetch("/api/proxy", {
+    const response = await fetch(`${getBaseURL(config)}/calculation`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
