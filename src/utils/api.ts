@@ -1,7 +1,8 @@
 import { APIResponse, ServerConfig } from "@/types/api";
 
-export const getBaseURL = (config: ServerConfig) =>
-  `${config.ip}:${config.port}`;
+export const getBaseURL = (config: ServerConfig) => {
+  return process.env.NEXT_PUBLIC_API_URL || `${config.ip}:${config.port}`;
+};
 
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
