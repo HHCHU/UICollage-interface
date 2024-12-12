@@ -24,8 +24,8 @@ export interface ReferenceSet {
   referenceImages: {
     id: string;
     url: string;
-    setIndex: number; // 1, 2, 3 중 어떤 세트에 속하는지
-    imageIndex: number; // 세트 내에서 몇 번째 이미지인지
+    setIndex: number;
+    imageIndex: number;
   }[];
   rating?: Rating;
   agentDiscussion?: {
@@ -36,10 +36,16 @@ export interface ReferenceSet {
     }[];
   };
   timestamp: number;
+  userId?: string;
+}
+
+export interface ReferenceSetInfo {
+  id: string;
+  timestamp: number;
 }
 
 export interface UserHistory {
   userId: string;
-  referenceSets: ReferenceSet[];
+  referenceSets: ReferenceSetInfo[];
   lastAccessed: number;
 }

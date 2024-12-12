@@ -10,17 +10,30 @@ export const fileToBase64 = (file: File): Promise<string> => {
     const ctx = canvas.getContext("2d");
 
     img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
+      // 이미지 크기 조정
+      let width = img.width;
+      let height = img.height;
+      const maxSize = 800; // 최대 크기 제한
+
+      if (width > height && width > maxSize) {
+        height = (height * maxSize) / width;
+        width = maxSize;
+      } else if (height > maxSize) {
+        width = (width * maxSize) / height;
+        height = maxSize;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
 
       // 흰색 배경으로 캔버스를 채워서 알파 채널 제거
       if (ctx) {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, width, height);
 
-        // base64 문자열에서 헤더 제거
-        const base64 = canvas.toDataURL("image/jpeg", 1.0).split(",")[1];
+        // JPEG 품질을 0.7로 설정하여 압축
+        const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
         resolve(base64);
       } else {
         reject(new Error("Failed to get canvas context"));
