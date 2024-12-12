@@ -1,18 +1,25 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { ImageUploader } from "@/components/ImageUploader";
 import { ImagePreview } from "@/components/ImagePreview";
 import { ResultSection } from "@/components/ResultSection";
-import { ImageData } from "@/types";
+import { ImageData, Rating, ReferenceSet } from "@/types";
 import { ServerConfig } from "@/types/api";
 import { sendImages } from "@/utils/api";
+import { saveReferenceSet, saveRating } from "@/utils/firebase";
+import { useSearchParams } from "next/navigation";
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const userId = searchParams.get("user") || "anonymous";
+
   const [inputImages, setInputImages] = useState<ImageData[]>([]);
   const [resultImages, setResultImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastAnalyzedImages, setLastAnalyzedImages] = useState<string[]>([]);
+  const [currentReferenceSet, setCurrentReferenceSet] =
+    useState<ReferenceSet | null>(null);
 
   const [serverConfig] = useState<ServerConfig>({
     ip: "http://143.248.48.96",
@@ -56,9 +63,11 @@ export default function Home() {
         return filtered;
       });
 
+      // 이미지가 제거되면 결과도 초기화
       if (inputImages.length <= 1) {
         setResultImages([]);
         setLastAnalyzedImages([]);
+        setCurrentReferenceSet(null);
       }
     },
     [inputImages.length]
@@ -70,24 +79,49 @@ export default function Home() {
       return;
     }
 
+    // 현재 이미지 세트가 마지막으로 분석한 것과 동일한지 확인
     const currentImageIds = inputImages
       .map((img) => img.id)
       .sort()
       .join(",");
     if (currentImageIds === lastAnalyzedImages.sort().join(",")) {
-      return;
+      return; // 동일한 이미지 세트면 분석하지 않음
     }
 
     setIsLoading(true);
 
     try {
+      // 1. 서버에 이미지 분석 요청
       const images = await sendImages(
         inputImages.map((img) => img.file),
         serverConfig
       );
 
-      setResultImages(images.map((img) => `data:image/jpg;base64,${img}`));
+      // 2. 결과 이미지 설정
+      const resultImageUrls = images.map(
+        (img) => `data:image/jpg;base64,${img}`
+      );
+      setResultImages(resultImageUrls);
       setLastAnalyzedImages(inputImages.map((img) => img.id));
+
+      // 3. ReferenceSet 생성 및 저장
+      const newReferenceSet: ReferenceSet = {
+        id: Date.now().toString(),
+        inputImages: inputImages.map((img) => ({
+          id: img.id,
+          url: img.preview,
+        })),
+        referenceImages: resultImageUrls.map((url, i) => ({
+          id: `result-${i}`,
+          url,
+          setIndex: Math.floor(i / 3),
+          imageIndex: i % 3,
+        })),
+        timestamp: Date.now(),
+      };
+
+      await saveReferenceSet(userId, newReferenceSet);
+      setCurrentReferenceSet(newReferenceSet);
     } catch (error) {
       console.error("Error:", error);
       alert("서버와의 통신 중 오류가 발생했습니다.");
@@ -96,6 +130,22 @@ export default function Home() {
     }
   };
 
+  const handleRating = async (rating: Rating) => {
+    if (!currentReferenceSet) return;
+
+    try {
+      await saveRating(userId, currentReferenceSet.id, rating);
+      setCurrentReferenceSet({
+        ...currentReferenceSet,
+        rating,
+      });
+    } catch (error) {
+      console.error("Error saving rating:", error);
+      alert("평가 저장 중 오류가 발생했습니다.");
+    }
+  };
+
+  // 분석 버튼 활성화 조건
   const isAnalyzeDisabled =
     isLoading ||
     inputImages.length !== 3 ||
@@ -104,6 +154,15 @@ export default function Home() {
         .map((img) => img.id)
         .sort()
         .join(",") === lastAnalyzedImages.sort().join(","));
+
+  // Cleanup URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      inputImages.forEach((image) => {
+        URL.revokeObjectURL(image.preview);
+      });
+    };
+  }, [inputImages]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -203,6 +262,8 @@ export default function Home() {
             images={resultImages}
             hasValidInput={inputImages.length === 3}
             isLoading={isLoading}
+            onRate={handleRating}
+            initialRating={currentReferenceSet?.rating}
           />
 
           <section className="w-[20%] bg-white rounded-2xl shadow-lg p-8">

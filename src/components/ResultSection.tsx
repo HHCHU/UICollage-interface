@@ -1,26 +1,31 @@
 import React, { useState } from "react";
 import Image from "next/image";
+import { ReferenceRating } from "./ReferenceRating";
+import { Rating } from "@/types";
 
 interface ResultSectionProps {
   images: string[];
   hasValidInput: boolean;
   isLoading?: boolean;
+  onRate?: (rating: Rating) => void;
+  initialRating?: Rating;
 }
 
 export function ResultSection({
   images,
   hasValidInput,
   isLoading = false,
+  onRate,
+  initialRating,
 }: ResultSectionProps) {
   const [selectedTab, setSelectedTab] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showRating, setShowRating] = useState(false);
 
-  // 이미지를 3개씩 그룹화하는 함수
-  const groupedImages = images.reduce((acc: string[][], curr, i) => {
-    if (i % 3 === 0) acc.push([]);
-    acc[Math.floor(i / 3)].push(curr);
-    return acc;
-  }, []);
+  const handleRatingSubmit = (rating: Rating) => {
+    onRate?.(rating);
+    setShowRating(false);
+  };
 
   return (
     <section
@@ -28,14 +33,23 @@ export function ResultSection({
         ${!hasValidInput ? "opacity-50" : "opacity-100"}`}
     >
       <div className="flex flex-col h-full">
-        <h2 className="text-xl font-semibold mb-6 text-gray-700 flex items-center justify-between">
-          <span>레퍼런스 결과</span>
-          {!hasValidInput && images.length > 0 && (
-            <span className="text-sm font-normal text-amber-500">
-              입력 이미지를 모두 선택해주세요
-            </span>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-700">레퍼런스 결과</h2>
+          {hasValidInput && images.length > 0 && !isLoading && (
+            <button
+              onClick={() => setShowRating(true)}
+              className="text-sm text-blue-500 hover:text-blue-600 transition-colors"
+            >
+              {initialRating ? "평가 수정하기" : "평가하기"}
+            </button>
           )}
-        </h2>
+        </div>
+
+        {!hasValidInput && images.length > 0 && (
+          <p className="text-sm font-normal text-amber-500 mb-4">
+            입력 이미지를 모두 선택해주세요
+          </p>
+        )}
 
         {isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4">
@@ -64,7 +78,7 @@ export function ResultSection({
         ) : images.length > 0 ? (
           <>
             <div className="flex gap-2 mb-6">
-              {groupedImages.map((_, index) => (
+              {[0, 1, 2].map((index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedTab(index)}
@@ -87,11 +101,13 @@ export function ResultSection({
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              {groupedImages[selectedTab]?.map((image, index) => (
-                <div
-                  key={index}
-                  onClick={() => hasValidInput && setSelectedImage(image)}
-                  className={`relative rounded-xl overflow-hidden shadow-md 
+              {images
+                .slice(selectedTab * 3, (selectedTab + 1) * 3)
+                .map((image, index) => (
+                  <div
+                    key={index}
+                    onClick={() => hasValidInput && setSelectedImage(image)}
+                    className={`relative rounded-xl overflow-hidden shadow-md 
                     border-2 border-blue-100 hover:border-blue-300 
                     transition-all duration-200
                     ${
@@ -99,23 +115,57 @@ export function ResultSection({
                         ? "cursor-pointer hover:scale-[1.02]"
                         : "cursor-not-allowed"
                     }`}
-                  style={{ aspectRatio: "9/16" }}
-                >
-                  <div
-                    className="absolute top-2 left-2 z-10 bg-black/20 backdrop-blur-sm text-white/90 
-                    rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium"
+                    style={{ aspectRatio: "9/16" }}
                   >
-                    {index + 1}
+                    <div
+                      className="absolute top-2 left-2 z-10 bg-black/20 backdrop-blur-sm text-white/90 
+                    rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium"
+                    >
+                      {index + 1}
+                    </div>
+                    <Image
+                      src={image}
+                      alt={`Result image ${selectedTab * 3 + index + 1}`}
+                      fill
+                      className="object-contain"
+                    />
                   </div>
-                  <Image
-                    src={image}
-                    alt={`Result image ${selectedTab * 3 + index + 1}`}
-                    fill
-                    className="object-contain"
+                ))}
+            </div>
+
+            {showRating && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-xl p-6 w-full max-w-md">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      레퍼런스 평가
+                    </h3>
+                    <button
+                      onClick={() => setShowRating(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <ReferenceRating
+                    onSubmit={handleRatingSubmit}
+                    initialRating={initialRating}
                   />
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
@@ -126,7 +176,6 @@ export function ResultSection({
         )}
       </div>
 
-      {/* 이미지 확대 모달 */}
       {selectedImage && hasValidInput && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
