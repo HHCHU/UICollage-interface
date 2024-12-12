@@ -8,6 +8,5 @@ export interface ImageUploadRequest {
 }
 
 export interface ServerConfig {
-  ip: string;
-  port: string;
+  host: string;
 }

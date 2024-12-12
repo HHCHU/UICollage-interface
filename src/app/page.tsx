@@ -39,8 +39,7 @@ function HomeContent() {
     useState<ReferenceSet | null>(null);
 
   const [serverConfig] = useState<ServerConfig>({
-    ip: "http://143.248.48.96",
-    port: "7887",
+    host: process.env.NEXT_PUBLIC_API_URL || "http://143.248.48.96:7887",
   });
 
   const handleImageUpload = (

@@ -1,7 +1,7 @@
 import { APIResponse, ServerConfig } from "@/types/api";
 
 export const getBaseURL = (config: ServerConfig) => {
-  return process.env.NEXT_PUBLIC_API_URL || `${config.ip}:${config.port}`;
+  return config.host;
 };
 
 export const fileToBase64 = (file: File): Promise<string> => {
