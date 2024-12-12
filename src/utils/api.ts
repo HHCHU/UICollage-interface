@@ -84,12 +84,12 @@ export const sendImages = async (
   config: ServerConfig
 ): Promise<string[]> => {
   try {
-    // 디버깅을 위한 로그
     console.log("Converting files to base64...");
     const base64Images = await Promise.all(files.map(fileToBase64));
     console.log("Files converted successfully");
 
-    const response = await fetch(`${getBaseURL(config)}/calculation`, {
+    // 프록시 API 엔드포인트로 요청
+    const response = await fetch("/api/proxy", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
