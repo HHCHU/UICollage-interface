@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "edge";
 
-// POST 메서드만 허용하도록 설정
-export const allowedMethods = ["POST"];
+// OPTIONS 메서드 핸들러 추가
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: "POST",
+    },
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
