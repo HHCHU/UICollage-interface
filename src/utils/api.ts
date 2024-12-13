@@ -88,8 +88,8 @@ export const sendImages = async (
     const base64Images = await Promise.all(files.map(fileToBase64));
     console.log("Files converted successfully");
 
-    // 프록시 API 엔드포인트로 요청
-    const response = await fetch("/api/proxy", {
+    // 직접 서버와 통신
+    const response = await fetch(`${getBaseURL(config)}/calculation`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -99,7 +99,7 @@ export const sendImages = async (
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Server error response:", errorText);
+      console.error("Server error:", response.status, errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
