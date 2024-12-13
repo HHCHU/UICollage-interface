@@ -49,3 +49,19 @@ export interface UserHistory {
   referenceSets: ReferenceSetInfo[];
   lastAccessed: number;
 }
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+  imageUrls?: string[];
+  isNewImageSet?: boolean;
+}
+
+export interface ChatSession {
+  id: string;
+  userId: string;
+  messages: ChatMessage[];
+  currentImageSetId?: string;
+}

@@ -9,13 +9,14 @@ import { ServerConfig } from "@/types/api";
 import { sendImages } from "@/utils/api";
 import { saveReferenceSet, saveRating } from "@/utils/firebase";
 import { useSearchParams } from "next/navigation";
+import { UXAgentChat } from "@/components/UXAgentChat";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-          UI Collage Interface
+        <h1 className="text-3xl font-bold text-center mb-8 text-blue-500">
+          UI Collage
         </h1>
         <div className="flex gap-8">
           <Suspense fallback={<div>Loading...</div>}>
@@ -37,10 +38,10 @@ function HomeContent() {
   const [lastAnalyzedImages, setLastAnalyzedImages] = useState<string[]>([]);
   const [currentReferenceSet, setCurrentReferenceSet] =
     useState<ReferenceSet | null>(null);
+  const [shouldStartAnalysis, setShouldStartAnalysis] = useState(false);
 
-  const [serverConfig] = useState<ServerConfig>({
-    host: process.env.NEXT_PUBLIC_API_URL || "http://143.248.48.96:7887",
-  });
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://143.248.48.96:7887";
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
@@ -105,18 +106,40 @@ function HomeContent() {
     }
 
     setIsLoading(true);
+    setShouldStartAnalysis(true); // UX 분석 시작 트리거
 
     try {
-      // 1. 서버에 이미지 분석 요청
-      const images = await sendImages(
-        inputImages.map((img) => img.file),
-        serverConfig
+      // 이미지를 Base64로 변환
+      const base64Images = await Promise.all(
+        inputImages.map(async (img) => {
+          const response = await fetch(img.preview);
+          const blob = await response.blob();
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        })
       );
 
-      // 2. 결과 이미지 설정
-      const resultImageUrls = images.map(
-        (img) => `data:image/jpg;base64,${img}`
-      );
+      // 1. 서버에 이미지 분석 요청
+      const response = await fetch(`${API_URL}/analyze`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          images: base64Images,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("서버 응답 오류");
+      }
+
+      const data = await response.json();
+      const resultImageUrls = data.images;
+
       setResultImages(resultImageUrls);
       setLastAnalyzedImages(inputImages.map((img) => img.id));
 
@@ -127,7 +150,7 @@ function HomeContent() {
           id: img.id,
           url: img.preview,
         })),
-        referenceImages: resultImageUrls.map((url, i) => ({
+        referenceImages: resultImageUrls.map((url: string, i: number) => ({
           id: `result-${i}`,
           url,
           setIndex: Math.floor(i / 3),
@@ -141,6 +164,7 @@ function HomeContent() {
     } catch (error) {
       console.error("Error:", error);
       alert("서버와의 통신 중 오류가 발생했습니다.");
+      setShouldStartAnalysis(false); // 에러 발생 시 분석 트리거 리셋
     } finally {
       setIsLoading(false);
     }
@@ -182,7 +206,7 @@ function HomeContent() {
 
   return (
     <>
-      <section className="w-[40%] bg-white rounded-2xl shadow-lg p-8">
+      <section className="w-[30%] bg-white rounded-2xl shadow-lg p-8">
         <h2 className="text-xl font-semibold mb-6 text-gray-700 flex items-center gap-2">
           입력 이미지
           <span className="text-sm font-normal text-gray-500">
@@ -278,13 +302,28 @@ function HomeContent() {
         initialRating={currentReferenceSet?.rating}
       />
 
-      <section className="w-[20%] bg-white rounded-2xl shadow-lg p-8">
+      <section className="w-[30%] bg-white rounded-2xl shadow-lg p-8">
         <h2 className="text-xl font-semibold mb-6 text-gray-700">
-          에이전트 토론
+          에이전트 조언
         </h2>
-        <div className="h-[calc(100%-4rem)] flex items-center justify-center">
-          <p className="text-gray-400 text-center">Coming Soon...</p>
-        </div>
+        {inputImages.length > 0 ? (
+          <UXAgentChat
+            userId={userId}
+            inputImages={inputImages}
+            referenceImages={resultImages}
+            shouldStartAnalysis={shouldStartAnalysis}
+            onError={(error) => {
+              console.error("UX Agent Error:", error);
+              alert("UX 에이전트와의 대화 중 오류가 발생했습니다.");
+            }}
+          />
+        ) : (
+          <div className="h-[calc(100%-4rem)] flex items-center justify-center">
+            <p className="text-gray-400 text-center">
+              이미지를 업로드하면 UX 연구원이 조언을 제공합니다.
+            </p>
+          </div>
+        )}
       </section>
     </>
   );

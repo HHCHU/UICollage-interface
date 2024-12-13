@@ -1,6 +1,12 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, get } from "firebase/database";
-import { ReferenceSet, Rating, UserHistory } from "@/types";
+import { getDatabase, ref, set, get, push, update } from "firebase/database";
+import {
+  ReferenceSet,
+  Rating,
+  UserHistory,
+  ChatMessage,
+  ChatSession,
+} from "@/types";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -155,6 +161,80 @@ export async function saveAgentDiscussion(
     }
   } catch (error) {
     console.error("Error saving agent discussion:", error);
+    throw error;
+  }
+}
+
+export async function saveChatMessage(
+  userId: string,
+  sessionId: string,
+  message: ChatMessage
+) {
+  try {
+    const chatRef = ref(db, `chats/${userId}/${sessionId}/messages`);
+    const newMessageRef = push(chatRef);
+
+    await set(newMessageRef, {
+      ...message,
+      timestamp: Date.now(),
+    });
+
+    // Update last message timestamp
+    const sessionRef = ref(db, `chats/${userId}/${sessionId}`);
+    await update(sessionRef, {
+      lastUpdated: Date.now(),
+    });
+  } catch (error) {
+    console.error("Error saving chat message:", error);
+    throw error;
+  }
+}
+
+export async function createChatSession(
+  userId: string,
+  initialMessage: ChatMessage
+): Promise<string> {
+  try {
+    const chatSessionRef = ref(db, `chats/${userId}`);
+    const newSessionRef = push(chatSessionRef);
+
+    await set(newSessionRef, {
+      userId,
+      messages: {
+        [push(ref(db)).key!]: initialMessage,
+      },
+      createdAt: Date.now(),
+      lastUpdated: Date.now(),
+    });
+
+    return newSessionRef.key!;
+  } catch (error) {
+    console.error("Error creating chat session:", error);
+    throw error;
+  }
+}
+
+export async function getChatSession(
+  userId: string,
+  sessionId: string
+): Promise<ChatSession | null> {
+  try {
+    const chatRef = ref(db, `chats/${userId}/${sessionId}`);
+    const snapshot = await get(chatRef);
+
+    if (!snapshot.exists()) {
+      return null;
+    }
+
+    const data = snapshot.val();
+    return {
+      id: sessionId,
+      userId,
+      messages: Object.values(data.messages || {}),
+      currentImageSetId: data.currentImageSetId,
+    };
+  } catch (error) {
+    console.error("Error getting chat session:", error);
     throw error;
   }
 }
