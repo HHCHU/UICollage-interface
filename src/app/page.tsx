@@ -40,9 +40,6 @@ function HomeContent() {
     useState<ReferenceSet | null>(null);
   const [shouldStartAnalysis, setShouldStartAnalysis] = useState(false);
 
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://143.248.48.96:7887";
-
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
   ) => {
@@ -109,36 +106,13 @@ function HomeContent() {
     setShouldStartAnalysis(true); // UX 분석 시작 트리거
 
     try {
-      // 이미지를 Base64로 변환
-      const base64Images = await Promise.all(
-        inputImages.map(async (img) => {
-          const response = await fetch(img.preview);
-          const blob = await response.blob();
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
-        })
-      );
-
       // 1. 서버에 이미지 분석 요청
-      const response = await fetch(`${API_URL}/analyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          images: base64Images,
-        }),
-      });
+      const images = await sendImages(inputImages.map((img) => img.file));
 
-      if (!response.ok) {
-        throw new Error("서버 응답 오류");
-      }
-
-      const data = await response.json();
-      const resultImageUrls = data.images;
+      // 2. 결과 이미지 설정
+      const resultImageUrls = images.map(
+        (img) => `data:image/jpg;base64,${img}`
+      );
 
       setResultImages(resultImageUrls);
       setLastAnalyzedImages(inputImages.map((img) => img.id));

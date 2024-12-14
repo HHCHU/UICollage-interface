@@ -64,6 +64,7 @@ export function UXAgentChat({
       // 이미지를 Base64로 변환
       const base64Images = await Promise.all(
         inputImages.map(async (img) => {
+          // preview가 Blob URL인 경우 실제 이미지 데이터로 변환
           const response = await fetch(img.preview);
           const blob = await response.blob();
           return new Promise<string>((resolve) => {
