@@ -37,7 +37,7 @@ export async function getUXFeedback(
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "디자인 분석 중 오��가 발생했습니다.");
+      throw new Error(errorData.error || "디자인 분석 중 오류가 발생했습니다.");
     }
 
     const data = await response.json();

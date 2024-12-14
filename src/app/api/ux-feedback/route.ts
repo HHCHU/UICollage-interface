@@ -5,10 +5,10 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
-const BASE_SYSTEM_PROMPT = `당신은 모바일 앱 UI/UX 디자인을 전문으로 하는 UX 연구원입니다. 
-사용자와 협력적으로 소통하며, 시퀀스 기반 UI 개선을 위한 실질적인 조언을 제공합니다. 
-항상 친근하고 전문적인 한국어로 대화하며, 구체적인 예시를 들어 설명합니다.`;
-
+const BASE_SYSTEM_PROMPT = `당신은 UX 전문가입니다. 다음 규칙을 반드시 따라주세요:
+1. 인사말이나 맺음말 없이 핵심적인 UX 평가와 개선점만 제시합니다.
+2. 총 6문장 이내의 간단명료한 존댓말로 답변합니다.
+3. 제시된 이미지들은 3장씩 하나의 시퀀스(순차적 사용자 플로우)를 구성합니다.`;
 export async function POST(request: NextRequest) {
   try {
     if (!GEMINI_API_KEY) {
@@ -44,20 +44,27 @@ export async function POST(request: NextRequest) {
 
     let userPrompt = BASE_SYSTEM_PROMPT;
 
-    // 채팅 메시지가 있는 경우 이전 대화 내용 포함
-    if (messages && Array.isArray(messages)) {
-      userPrompt +=
-        "\n\n이전 대화 내용:\n" +
-        messages.map((m) => `${m.role}: ${m.content}`).join("\n");
-    }
+    // 시나리오별 프롬프트 생성
+    if (messages && Array.isArray(messages) && messages.length > 0) {
+      // 3. 채팅 지속 시나리오
+      const chatContext = messages
+        .slice(-3)
+        .map((m) => `${m.role}: ${m.content}`)
+        .join("\n");
+      userPrompt += `\n\n대화 컨텍스트:\n${chatContext}\n\n${prompt}`;
+    } else if (isReference) {
+      // 2. 레퍼런스 분석 시나리오 (9장의 이미지 = 3개의 시퀀스)
+      userPrompt += `\n\n제시된 9장의 레퍼런스 이미지는 3개의 서로 다른 시퀀스입니다. 각 시퀀스(3장씩)의 장점을 분석하고, 이전에 검토한 사용자의 UI 시퀀스에 적용할 수 있는 가장 적절한 개선방안을 제시해주세요.
+      
+첫 번째 시퀀스(1-3번 이미지): 플로우와 장점 분석
+두 번째 시퀀스(4-6번 이미지): 플로우와 장점 분석
+세 번째 시퀀스(7-9번 이미지): 플로우와 장점 분석
 
-    // 새로운 프롬프트 추가
-    userPrompt +=
-      "\n\n" +
-      (prompt ||
-        (isReference
-          ? "이 레퍼런스 이미지들을 분석하고 UX 관점에서 피드백을 제공해주세요."
-          : "이 UI 디자인들을 분석하고 UX 관점에서 피드백을 제공해주세요."));
+위 레퍼런스들의 장점을 사용자의 UI 시퀀스에 어떻게 적용할 수 있을지 구체적으로 제안해주세요.`;
+    } else {
+      // 1. 초기 사용자 이미지 분석 시나리오
+      userPrompt += `\n\n이 UI 시퀀스의 UX를 분석하고 개선이 필요한 부분을 지적해주세요.`;
+    }
 
     const requestBody = {
       contents: [
@@ -78,7 +85,7 @@ export async function POST(request: NextRequest) {
         temperature: 0.7,
         top_k: 40,
         top_p: 0.95,
-        max_output_tokens: 2048,
+        max_output_tokens: 1024,
       },
     };
 

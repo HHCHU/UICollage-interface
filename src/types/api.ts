@@ -11,7 +11,6 @@ export interface ServerConfig {
   host: string;
 }
 
-// Gemini API를 위한 새로운 인터페이스들
 export interface GeminiMessage {
   role: "user" | "model";
   parts: {
