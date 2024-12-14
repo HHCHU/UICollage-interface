@@ -178,7 +178,7 @@ export function UXAgentChat({
     <div className="flex flex-col h-full">
       <div
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
+        className="flex-1 overflow-y-auto p-4 space-y-4 mb-4"
       >
         {messages.map((message, index) => (
           <div
@@ -232,7 +232,7 @@ export function UXAgentChat({
         )}
       </div>
 
-      <div className="p-4 border-t">
+      <div className="border-t pt-4">
         <div className="flex gap-2">
           <input
             type="text"
@@ -241,10 +241,10 @@ export function UXAgentChat({
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
             placeholder={
               isChatEnabled
-                ? "UX 연구원과 대화하기..."
+                ? "UX 에이전트와 대화하기..."
                 : "분석이 완료되면 대화할 수 있습니다."
             }
-            className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 p-2 border rounded-lg focus:ring-1 focus:ring-blue-400 text-black placeholder:text-gray-400"
             disabled={isLoading || !isChatEnabled}
           />
           <button
