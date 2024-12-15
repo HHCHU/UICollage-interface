@@ -42,7 +42,11 @@ export async function saveReferenceSet(
     userData.lastAccessed = Date.now();
 
     // 전체 사용자 데이터 업데이트
-    await set(userRef, userData);
+    // [ISSUE] Firebase Realtime Database의 한 번에 저장 가능한 데이터 크기 제한 때문에 에러 발생
+    const userDataSize =
+      new Blob([JSON.stringify(userData)]).size / (1024 * 1024);
+    console.log(`User data size: ${userDataSize.toFixed(2)} MB`);
+    // await set(userRef, userData);
 
     return referenceSet.id;
   } catch (error) {

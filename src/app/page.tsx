@@ -146,7 +146,7 @@ function HomeContent() {
     };
 
     const video = document.createElement("video");
-    video.src = URL.createObjectURL(videoFile);
+    video.src = inputVideoRef.current.preview;
     video.preload = "metadata";
     video.muted = true;
 
@@ -192,14 +192,26 @@ function HomeContent() {
       frames.push(frameDataURL);
     }
 
-    const newImageData: ImageData[] = frames.map((dataUrl) => ({
-      file: videoFile,
-      preview: dataUrl,
-      id: Math.random().toString(36).substr(2, 9),
-    }));
+    const newImageData: ImageData[] = frames.map((dataUrl, index) => {
+      const byteString = atob(dataUrl.split(",")[1]);
+      const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+      const newImageFile = new File([blob], `frame-${index}.jpg`, {
+        type: "image/jpeg",
+      });
 
+      return {
+        file: newImageFile,
+        preview: URL.createObjectURL(newImageFile),
+        id: Math.random().toString(36).substr(2, 9),
+      };
+    });
     setInputImages(newImageData.slice(0, 3));
-    URL.revokeObjectURL(video.src);
   };
 
   const handleVideoEdit = (inputImages: File[]) => {
