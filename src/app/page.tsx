@@ -1,14 +1,23 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, Suspense } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  Suspense,
+} from "react";
 import { ImageUploader } from "@/components/ImageUploader";
 import { ImagePreview } from "@/components/ImagePreview";
 import { ResultSection } from "@/components/ResultSection";
-import { ImageData, Rating, ReferenceSet } from "@/types";
+import { ImageData, Rating, ReferenceSet, TabName } from "@/types";
 import { ServerConfig } from "@/types/api";
 import { sendImages } from "@/utils/api";
 import { saveReferenceSet, saveRating } from "@/utils/firebase";
 import { useSearchParams } from "next/navigation";
+import TabController from "@/components/TabController";
+import { VideoUploader } from "@/components/VideoUploader";
+import { VideoPreview } from "@/components/VideoPreview";
 
 export default function Home() {
   return (
@@ -32,6 +41,7 @@ function HomeContent() {
   const userId = searchParams.get("user") || "anonymous";
 
   const [inputImages, setInputImages] = useState<ImageData[]>([]);
+  const [inputVideo, setInputVideo] = useState<File | null>(null);
   const [resultImages, setResultImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastAnalyzedImages, setLastAnalyzedImages] = useState<string[]>([]);
@@ -39,8 +49,11 @@ function HomeContent() {
     useState<ReferenceSet | null>(null);
 
   const [serverConfig] = useState<ServerConfig>({
-    host: process.env.NEXT_PUBLIC_API_URL || "http://143.248.48.96:7887",
+    host: process.env.NEXT_PUBLIC_API_URL || "",
   });
+  const [activeTab, setActiveTab] = useState<TabName.Image | TabName.Video>(
+    TabName.Image
+  );
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
@@ -79,7 +92,6 @@ function HomeContent() {
         return filtered;
       });
 
-      // 이미지가 제거되면 결과도 초기화
       if (inputImages.length <= 1) {
         setResultImages([]);
         setLastAnalyzedImages([]);
@@ -89,38 +101,129 @@ function HomeContent() {
     [inputImages.length]
   );
 
+  const handleVideoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
+  ) => {
+    e.preventDefault();
+
+    const files =
+      "dataTransfer" in e
+        ? Array.from(e.dataTransfer?.files || [])
+        : Array.from(e.target.files || []);
+
+    if (files.length === 0) return;
+    const videoFile = files[0];
+    if (!videoFile.type.startsWith("video/")) {
+      alert("비디오 파일을 업로드해주세요.");
+      return;
+    }
+    if (videoFile.size > 50 * 1024 * 1024) {
+      alert("파일 크기가 50MB를 초과합니다.");
+      return;
+    }
+
+    // Store the video file in the ref
+    // inputVideoRef.current = videoFile;
+    setInputVideo(videoFile);
+
+    // Cleanup previously loaded images
+    inputImages.forEach((image) => URL.revokeObjectURL(image.preview));
+
+    const video = document.createElement("video");
+    video.src = URL.createObjectURL(videoFile);
+    video.preload = "metadata";
+    video.muted = true;
+
+    await new Promise<void>((resolve, reject) => {
+      video.onloadedmetadata = () => {
+        resolve();
+      };
+      video.onerror = (err) => {
+        reject(err);
+      };
+    });
+
+    const duration = video.duration;
+    if (isNaN(duration) || duration <= 0) {
+      alert("비디오 정보를 불러올 수 없습니다.");
+      return;
+    }
+
+    const captureTimes = [0, duration / 2, duration - 0.1];
+
+    const captureFrame = (time: number): Promise<string> => {
+      return new Promise((resolve) => {
+        video.currentTime = time;
+        video.onseeked = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve("");
+            return;
+          }
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const dataURL = canvas.toDataURL("image/jpeg", 0.9);
+          resolve(dataURL);
+        };
+      });
+    };
+
+    const frames = [];
+    for (const t of captureTimes) {
+      const frameDataURL = await captureFrame(t);
+      frames.push(frameDataURL);
+    }
+
+    const newImageData: ImageData[] = frames.map((dataUrl) => ({
+      file: videoFile,
+      preview: dataUrl,
+      id: Math.random().toString(36).substr(2, 9),
+    }));
+
+    setInputImages(newImageData.slice(0, 3));
+    URL.revokeObjectURL(video.src);
+  };
+
+  const handleVideoEdit = (inputImages: File[]) => {
+    const newImageData: ImageData[] = inputImages.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      id: Math.random().toString(36).substr(2, 9),
+    }));
+
+    setInputImages(newImageData.slice(0, 3));
+  };
+
   const handleSubmit = async () => {
     if (inputImages.length !== 3) {
       alert("3개의 이미지를 모두 선택해주세요.");
       return;
     }
 
-    // 현재 이미지 세트가 마지막으로 분석한 것과 동일한지 확인
     const currentImageIds = inputImages
       .map((img) => img.id)
       .sort()
       .join(",");
     if (currentImageIds === lastAnalyzedImages.sort().join(",")) {
-      return; // 동일한 이미지 세트면 분석하지 않음
+      return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. 서버에 이미지 분석 요청
       const images = await sendImages(
         inputImages.map((img) => img.file),
         serverConfig
       );
 
-      // 2. 결과 이미지 설정
       const resultImageUrls = images.map(
         (img) => `data:image/jpg;base64,${img}`
       );
       setResultImages(resultImageUrls);
       setLastAnalyzedImages(inputImages.map((img) => img.id));
 
-      // 3. ReferenceSet 생성 및 저장
       const newReferenceSet: ReferenceSet = {
         id: Date.now().toString(),
         inputImages: inputImages.map((img) => ({
@@ -161,7 +264,6 @@ function HomeContent() {
     }
   };
 
-  // 분석 버튼 활성화 조건
   const isAnalyzeDisabled =
     isLoading ||
     inputImages.length !== 3 ||
@@ -171,7 +273,6 @@ function HomeContent() {
         .sort()
         .join(",") === lastAnalyzedImages.sort().join(","));
 
-  // Cleanup URLs when component unmounts
   useEffect(() => {
     return () => {
       inputImages.forEach((image) => {
@@ -183,19 +284,39 @@ function HomeContent() {
   return (
     <>
       <section className="w-[40%] bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-xl font-semibold mb-6 text-gray-700 flex items-center gap-2">
-          입력 이미지
-          <span className="text-sm font-normal text-gray-500">
-            ({inputImages.length}/3)
-          </span>
-        </h2>
-
-        <ImageUploader
-          onImageUpload={handleImageUpload}
-          disabled={inputImages.length >= 3}
-        />
-
-        <ImagePreview images={inputImages} onRemove={removeImage} />
+        <TabController activeTab={activeTab} setActiveTab={setActiveTab} />
+        {activeTab === TabName.Image && (
+          <div id="image-tab">
+            <h2 className="text-xl font-semibold mb-6 text-gray-700 flex items-center gap-2">
+              입력 이미지
+              <span className="text-sm font-normal text-gray-500">
+                ({inputImages.length}/3)
+              </span>
+            </h2>
+            <ImageUploader
+              onImageUpload={handleImageUpload}
+              disabled={inputImages.length >= 3}
+            />
+            <ImagePreview images={inputImages} onRemove={removeImage} />
+          </div>
+        )}
+        {activeTab === TabName.Video && (
+          <div id="video-tab">
+            <h2 className="text-xl font-semibold mb-6 text-gray-700">
+              입력 비디오
+            </h2>
+            <VideoUploader
+              onVideoUpload={handleVideoUpload}
+              disabled={inputImages.length >= 3}
+            />
+            <VideoPreview
+              images={inputImages}
+              video={inputVideo}
+              onVideoEdit={handleVideoEdit}
+              onRemove={removeImage}
+            />
+          </div>
+        )}
 
         <button
           onClick={handleSubmit}

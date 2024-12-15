@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 
-interface ImageUploaderProps {
-  onImageUpload: (
+interface VideoUploaderProps {
+  onVideoUpload: (
     e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
   ) => void;
   disabled: boolean;
 }
 
-export function ImageUploader({ onImageUpload, disabled }: ImageUploaderProps) {
+export function VideoUploader({ onVideoUpload, disabled }: VideoUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
 
   const handleDrag = (e: React.DragEvent<HTMLElement>) => {
@@ -28,7 +28,7 @@ export function ImageUploader({ onImageUpload, disabled }: ImageUploaderProps) {
       onDragEnter={handleDrag}
     >
       <label
-        htmlFor="file-upload"
+        htmlFor="video-upload"
         className={`flex flex-col items-center justify-center w-full h-40 
           border-2 ${
             dragActive ? "border-blue-400 bg-blue-50" : "border-blue-200"
@@ -41,7 +41,7 @@ export function ImageUploader({ onImageUpload, disabled }: ImageUploaderProps) {
         onDrop={(e: React.DragEvent<HTMLLabelElement>) => {
           e.preventDefault();
           handleDrag(e);
-          onImageUpload(e);
+          onVideoUpload(e);
         }}
       >
         <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -64,14 +64,13 @@ export function ImageUploader({ onImageUpload, disabled }: ImageUploaderProps) {
             <span className="font-semibold">클릭하여 업로드</span> 또는 드래그
             앤 드롭
           </p>
-          <p className="text-xs text-gray-500">이미지 파일을 선택해주세요</p>
+          <p className="text-xs text-gray-500">비디오 파일을 선택해주세요</p>
         </div>
         <input
-          id="file-upload"
+          id="video-upload"
           type="file"
-          accept="image/*"
-          multiple
-          onChange={onImageUpload}
+          accept="video/*"
+          onChange={onVideoUpload}
           className="hidden"
         />
       </label>

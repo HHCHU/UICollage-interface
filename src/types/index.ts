@@ -49,3 +49,8 @@ export interface UserHistory {
   referenceSets: ReferenceSetInfo[];
   lastAccessed: number;
 }
+
+export enum TabName {
+  Image = "Image",
+  Video = "Video",
+}
