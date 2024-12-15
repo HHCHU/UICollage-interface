@@ -66,7 +66,10 @@ export function VideoUploader({ onVideoUpload, disabled }: VideoUploaderProps) {
           id="video-upload"
           type="file"
           accept="video/*"
-          onChange={onVideoUpload}
+          onChange={(e) => {
+            onVideoUpload(e);
+            (e.target as HTMLInputElement).value = "";
+          }}
           className="hidden"
         />
       </label>

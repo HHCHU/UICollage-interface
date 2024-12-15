@@ -4,6 +4,12 @@ export interface ImageData {
   id: string;
 }
 
+export interface VideoData {
+  file: File;
+  preview: string;
+  id: string;
+}
+
 export interface ServerConfig {
   ip: string;
   port: string;

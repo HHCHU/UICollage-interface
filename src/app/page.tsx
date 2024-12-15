@@ -10,7 +10,7 @@ import React, {
 import { ImageUploader } from "@/components/ImageUploader";
 import { ImagePreview } from "@/components/ImagePreview";
 import { ResultSection } from "@/components/ResultSection";
-import { ImageData, Rating, ReferenceSet, TabName } from "@/types";
+import { ImageData, Rating, ReferenceSet, TabName, VideoData } from "@/types";
 import { ServerConfig } from "@/types/api";
 import { sendImages } from "@/utils/api";
 import { saveReferenceSet, saveRating } from "@/utils/firebase";
@@ -43,17 +43,13 @@ function HomeContent() {
   const userId = searchParams.get("user") || "anonymous";
 
   const [inputImages, setInputImages] = useState<ImageData[]>([]);
-  const [inputVideo, setInputVideo] = useState<File | null>(null);
+  const inputVideoRef = useRef<VideoData | null>(null);
   const [resultImages, setResultImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastAnalyzedImages, setLastAnalyzedImages] = useState<string[]>([]);
   const [currentReferenceSet, setCurrentReferenceSet] =
     useState<ReferenceSet | null>(null);
   const [shouldStartAnalysis, setShouldStartAnalysis] = useState(false);
-
-  const [serverConfig] = useState<ServerConfig>({
-    host: process.env.NEXT_PUBLIC_API_URL || "",
-  });
   const [activeTab, setActiveTab] = useState<TabName.Image | TabName.Video>(
     TabName.Image
   );
@@ -104,6 +100,17 @@ function HomeContent() {
     [inputImages.length]
   );
 
+  const removeVideo = useCallback(() => {
+    if (inputVideoRef.current) {
+      URL.revokeObjectURL(inputVideoRef.current.preview);
+      inputVideoRef.current = null;
+    }
+    setInputImages([]);
+    setResultImages([]);
+    setLastAnalyzedImages([]);
+    setCurrentReferenceSet(null);
+  }, [inputVideoRef.current]);
+
   const handleVideoUpload = async (
     e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
   ) => {
@@ -125,12 +132,18 @@ function HomeContent() {
       return;
     }
 
-    // Store the video file in the ref
-    // inputVideoRef.current = videoFile;
-    setInputVideo(videoFile);
-
-    // Cleanup previously loaded images
+    // 이전 이미지 삭제
     inputImages.forEach((image) => URL.revokeObjectURL(image.preview));
+    if (inputVideoRef.current)
+      URL.revokeObjectURL(inputVideoRef.current.preview);
+    inputVideoRef.current = null;
+
+    // Ref에 File 클래스 저장
+    inputVideoRef.current = {
+      file: videoFile,
+      preview: URL.createObjectURL(videoFile),
+      id: Math.random().toString(36).substr(2, 9),
+    };
 
     const video = document.createElement("video");
     video.src = URL.createObjectURL(videoFile);
@@ -349,9 +362,9 @@ function HomeContent() {
                   <div className="w-3/5">
                     <VideoPreview
                       images={inputImages}
-                      video={inputVideo}
+                      video={inputVideoRef.current}
                       onVideoEdit={handleVideoEdit}
-                      onRemove={removeImage}
+                      onRemove={removeVideo}
                       isLoading={isLoading}
                     />
                   </div>

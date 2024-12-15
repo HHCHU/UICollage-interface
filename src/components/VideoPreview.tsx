@@ -6,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import Image from "next/image";
+import { VideoData } from "@/types";
 
 interface ImageData {
   id: string;
@@ -15,8 +16,8 @@ interface ImageData {
 interface VideoPreviewProps {
   images: ImageData[];
   onVideoEdit: (inputImages: File[]) => void;
-  onRemove: (id: string) => void;
-  video: File | null;
+  onRemove: () => void;
+  video: VideoData | null;
   isLoading: boolean;
 }
 
@@ -39,37 +40,17 @@ export function VideoPreview({
     null,
   ]);
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [duration, setDuration] = useState(0);
-
-  const videoURL = useMemo(() => {
-    if (!video) return "";
-    return URL.createObjectURL(video);
-  }, [video]);
-
-  useEffect(() => {
-    return () => {
-      if (videoURL) {
-        URL.revokeObjectURL(videoURL);
-      }
-    };
-  }, [videoURL]);
-
-  const handleLoadedMetadata = useCallback(() => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration);
-    }
-  }, []);
+  const videoElRef = useRef<HTMLVideoElement | null>(null);
+  const canvasElRef = useRef<HTMLCanvasElement | null>(null);
 
   const capturePreview = (time: number): Promise<string> => {
     return new Promise((resolve) => {
-      if (!videoRef.current || !canvasRef.current) {
+      if (!videoElRef.current || !canvasElRef.current) {
         resolve("");
         return;
       }
-      const videoEl = videoRef.current;
-      const canvasEl = canvasRef.current;
+      const videoEl = videoElRef.current;
+      const canvasEl = canvasElRef.current;
 
       videoEl.currentTime = time;
       videoEl.onseeked = () => {
@@ -88,8 +69,8 @@ export function VideoPreview({
   };
 
   const markFrameForSlot = async (slotIndex: number) => {
-    if (!videoRef.current) return;
-    const currentTime = videoRef.current.currentTime;
+    if (!videoElRef.current) return;
+    const currentTime = videoElRef.current.currentTime;
     const previewUrl = await capturePreview(currentTime);
     setChosenTimes((prev) => {
       const newTimes = [...prev];
@@ -105,12 +86,12 @@ export function VideoPreview({
 
   const captureFrame = (time: number): Promise<File> => {
     return new Promise((resolve) => {
-      if (!videoRef.current || !canvasRef.current) {
+      if (!videoElRef.current || !canvasElRef.current) {
         resolve(new File([], "empty.jpg"));
         return;
       }
-      const videoEl = videoRef.current;
-      const canvasEl = canvasRef.current;
+      const videoEl = videoElRef.current;
+      const canvasEl = canvasElRef.current;
 
       videoEl.currentTime = time;
       videoEl.onseeked = () => {
@@ -160,25 +141,15 @@ export function VideoPreview({
     setChosenPreviews([null, null, null]);
   };
 
-  const removeAll = () => {
-    images.forEach((image) => onRemove(image.id));
-  };
-
   const canSave = chosenTimes.filter((t) => t !== null).length === 3;
 
   return (
     <div className="h-full flex flex-col">
       <div
-        className="grid grid-cols-3 gap-2 p-2 group relative
+        className="grid grid-cols-3 gap-2 p-1 group relative
         rounded-xl overflow-hidden border-2
         hover:border-blue-300 transition-all duration-200 bg-white
-        cursor-pointer hover:scale-[1.02] box-border"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!video) alert("Please upload the video first.");
-          if (isLoading) return;
-          setShowEditModal(true);
-        }}
+        hover:scale-[1.02] box-border"
       >
         {images.map((image, idx) => (
           <div
@@ -192,7 +163,7 @@ export function VideoPreview({
             >
               {idx + 1}
             </div>
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full rounded-xl overflow-hidden">
               <Image
                 src={image.preview}
                 alt="Input image"
@@ -237,12 +208,9 @@ export function VideoPreview({
         ))}
         {images.length > 0 && !isLoading && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              removeAll();
-            }}
-            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1
-                opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-0"
+            onClick={onRemove}
+            className="absolute top-3 right-3 bg-red-500 text-white rounded-full p-1
+              opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-0 shadow-md"
           >
             <svg
               className="w-4 h-4"
@@ -255,6 +223,33 @@ export function VideoPreview({
                 strokeLinejoin="round"
                 strokeWidth="2"
                 d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        )}
+        {images.length > 0 && !isLoading && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!video) {
+                alert("Please upload the video first.");
+                return;
+              }
+              setShowEditModal(true);
+            }}
+            className="absolute bottom-3 right-3 bg-blue-500 text-white rounded-full p-1
+                opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600 z-0  shadow-md"
+          >
+            <svg
+              className="w-4 h-4 text-white p-0.3"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                xmlns="http://www.w3.org/2000/svg"
+                id="pen-Filled-2"
+                data-name="pen-Filled"
+                d="M11.911,6.33l5.76,5.76L9.771,20a2.521,2.521,0,0,1-1.35.7l-4.74.79a.97.97,0,0,1-.17.01,1.017,1.017,0,0,1-.71-.3,1.028,1.028,0,0,1-.29-.88l.79-4.74A2.521,2.521,0,0,1,4,14.23ZM20.3,3.7a4.056,4.056,0,0,0-5.76,0l-1.21,1.21,5.76,5.76L20.3,9.46a4.056,4.056,0,0,0,0-5.76Z"
               />
             </svg>
           </button>
@@ -289,19 +284,15 @@ export function VideoPreview({
                 />
               </svg>
             </button>
-
             <h2 className="text-xl font-semibold text-gray-700">
               Video Marker
             </h2>
-
             <video
-              ref={videoRef}
-              src={videoURL}
+              ref={videoElRef}
+              src={video.preview}
               className="w-full border rounded h-64 bg-black"
-              onLoadedMetadata={handleLoadedMetadata}
               controls
             />
-
             <div className="grid grid-cols-3 gap-4">
               {[0, 1, 2].map((slotIndex) => {
                 const preview = chosenPreviews[slotIndex];
@@ -310,7 +301,6 @@ export function VideoPreview({
                   <div key={slotIndex} className="flex flex-col items-center">
                     <div className="border border-gray-200 rounded w-full h-48 bg-gray-50 relative overflow-hidden flex items-center justify-center">
                       {preview ? (
-                        // Display chosen preview image
                         <Image
                           src={preview}
                           alt={`Marked frame ${slotIndex + 1}`}
@@ -351,7 +341,7 @@ export function VideoPreview({
               </button>
             </div>
 
-            <canvas ref={canvasRef} style={{ display: "none" }} />
+            <canvas ref={canvasElRef} style={{ display: "none" }} />
           </div>
         </div>
       )}
