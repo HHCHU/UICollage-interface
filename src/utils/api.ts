@@ -2,7 +2,7 @@ import { APIResponse } from "@/types/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://143.248.48.96:7887";
 const BASELINE_ENDPOINT = "/calculation-baseline";
-const OUR_MODEL_ENDPOINT = "/calculation";
+const OUR_MODEL_ENDPOINT = "/calculation-ours";
 
 // 서버 연결 검증용 ping
 export const pingServer = async (): Promise<string> => {

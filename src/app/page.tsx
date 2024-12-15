@@ -300,6 +300,15 @@ function HomeContent() {
     }
   };
 
+  const setBaselineCondition = (useBaseline: boolean) => {
+    // [CAUTION] 이미지를 초기화 - 로직 (및 서버) 확인 바람
+    setUseBaseline(useBaseline);
+    setInputImages([]);
+    setResultImages([]);
+    setLastAnalyzedImages([]);
+    setCurrentReferenceSet(null);
+  };
+
   const isAnalyzeDisabled =
     isLoading ||
     inputImages.length !== 3 ||
@@ -322,24 +331,26 @@ function HomeContent() {
       <div className="flex gap-8 h-[calc(100vh-8rem)]">
         <div className="absolute top-4 right-4 flex gap-2">
           <button
-            onClick={() => setUseBaseline(false)}
+            onClick={() => setBaselineCondition(false)}
             className={`px-4 py-2 rounded-lg font-medium shadow-md transition-all
               ${
                 !useBaseline
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 text-gray-300 hover:bg-gray-200"
               }`}
+            disabled={isLoading}
           >
             Condition A
           </button>
           <button
-            onClick={() => setUseBaseline(true)}
+            onClick={() => setBaselineCondition(true)}
             className={`px-4 py-2 rounded-lg font-medium shadow-md transition-all
               ${
                 useBaseline
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 text-gray-300 hover:bg-gray-200"
               }`}
+            disabled={isLoading}
           >
             Condition B
           </button>
