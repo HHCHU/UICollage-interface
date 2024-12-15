@@ -28,29 +28,26 @@ export function ResultSection({
   };
 
   return (
-    <section
-      className={`w-[55%] bg-white rounded-2xl shadow-lg p-8 transition-all duration-200
-        ${!hasValidInput ? "opacity-50" : "opacity-100"}`}
-    >
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-700">레퍼런스 결과</h2>
-          {hasValidInput && images.length > 0 && !isLoading && (
-            <button
-              onClick={() => setShowRating(true)}
-              className="text-sm text-blue-500 hover:text-blue-600 transition-colors"
-            >
-              {initialRating ? "평가 수정하기" : "평가하기"}
-            </button>
-          )}
-        </div>
-
-        {!hasValidInput && images.length > 0 && (
-          <p className="text-sm font-normal text-amber-500 mb-4">
-            입력 이미지를 모두 선택해주세요
-          </p>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-700">레퍼런스 결과</h2>
+        {hasValidInput && images.length > 0 && !isLoading && (
+          <button
+            onClick={() => setShowRating(true)}
+            className="text-sm text-blue-500 hover:text-blue-600 transition-colors"
+          >
+            {initialRating ? "평가 수정하기" : "평가하기"}
+          </button>
         )}
+      </div>
 
+      {!hasValidInput && images.length > 0 && (
+        <p className="text-sm font-normal text-amber-500 mb-4">
+          입력 이미지를 모두 선택해주세요
+        </p>
+      )}
+
+      <div className="flex-1 flex">
         {isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4">
             <div className="relative w-16 h-16">
@@ -63,27 +60,16 @@ export function ResultSection({
               </p>
               <p className="text-sm text-gray-500">잠시만 기다려주세요</p>
             </div>
-            <div className="mt-8 flex gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-20 h-32 bg-gray-100 rounded-lg animate-pulse"
-                  style={{
-                    animationDelay: `${i * 200}ms`,
-                  }}
-                />
-              ))}
-            </div>
           </div>
         ) : images.length > 0 ? (
-          <>
-            <div className="flex gap-2 mb-6">
+          <div className="flex gap-6 w-full">
+            <div className="flex flex-col gap-2">
               {[0, 1, 2].map((index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedTab(index)}
                   disabled={!hasValidInput}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors w-24
                     ${
                       selectedTab === index
                         ? "bg-blue-500 text-white"
@@ -100,7 +86,7 @@ export function ResultSection({
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="flex-1 grid grid-cols-3 gap-4">
               {images
                 .slice(selectedTab * 3, (selectedTab + 1) * 3)
                 .map((image, index) => (
@@ -108,65 +94,33 @@ export function ResultSection({
                     key={index}
                     onClick={() => hasValidInput && setSelectedImage(image)}
                     className={`relative rounded-xl overflow-hidden shadow-md 
-                    border-2 border-blue-100 hover:border-blue-300 
-                    transition-all duration-200
-                    ${
-                      hasValidInput
-                        ? "cursor-pointer hover:scale-[1.02]"
-                        : "cursor-not-allowed"
-                    }`}
-                    style={{ aspectRatio: "9/16" }}
+                      border-2 border-blue-100 hover:border-blue-300 
+                      transition-all duration-200 aspect-[9/16]
+                      ${
+                        hasValidInput
+                          ? "cursor-pointer hover:scale-[1.02]"
+                          : "cursor-not-allowed"
+                      }`}
                   >
                     <div
                       className="absolute top-2 left-2 z-10 bg-black/20 backdrop-blur-sm text-white/90 
-                    rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium"
+                      rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium"
                     >
                       {index + 1}
                     </div>
-                    <Image
-                      src={image}
-                      alt={`Result image ${selectedTab * 3 + index + 1}`}
-                      fill
-                      className="object-contain"
-                    />
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={image}
+                        alt={`Result image ${selectedTab * 3 + index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                    </div>
                   </div>
                 ))}
             </div>
-
-            {showRating && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-xl p-6 w-full max-w-md">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      레퍼런스 평가
-                    </h3>
-                    <button
-                      onClick={() => setShowRating(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                  <ReferenceRating
-                    onSubmit={handleRatingSubmit}
-                    initialRating={initialRating}
-                  />
-                </div>
-              </div>
-            )}
-          </>
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-gray-400">
@@ -175,6 +129,40 @@ export function ResultSection({
           </div>
         )}
       </div>
+
+      {showRating && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                레퍼런스 평가
+              </h3>
+              <button
+                onClick={() => setShowRating(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <ReferenceRating
+              onSubmit={handleRatingSubmit}
+              initialRating={initialRating}
+            />
+          </div>
+        </div>
+      )}
 
       {selectedImage && hasValidInput && (
         <div
@@ -213,6 +201,6 @@ export function ResultSection({
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }
