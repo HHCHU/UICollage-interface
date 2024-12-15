@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ChatMessage } from "@/types";
+import { ChatMessage, ImageData } from "@/types";
 import { getUXFeedback, chatWithUXAgent } from "@/utils/ai-utils";
 import {
   saveChatMessage,
@@ -9,7 +9,7 @@ import {
 
 interface UXAgentChatProps {
   userId: string;
-  inputImages: { preview: string }[];
+  inputImages: ImageData[];
   referenceImages?: string[];
   onError?: (error: Error) => void;
   shouldStartAnalysis?: boolean;
@@ -61,35 +61,52 @@ export function UXAgentChat({
     try {
       setIsLoading(true);
 
-      // 이미지를 Base64로 변환
+      // File 객체에서 직접 Base64 문자열 생성
       const base64Images = await Promise.all(
         inputImages.map(async (img) => {
-          // preview가 Blob URL인 경우 실제 이미지 데이터로 변환
-          const response = await fetch(img.preview);
-          const blob = await response.blob();
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
+          try {
+            return new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const base64String = reader.result as string;
+                resolve(base64String);
+              };
+              reader.onerror = () => reject(new Error("Failed to read image"));
+              reader.readAsDataURL(img.file);
+            });
+          } catch (error) {
+            console.error("Error processing image:", error);
+            return null;
+          }
         })
       );
 
-      const feedback = await getUXFeedback(base64Images);
+      const validImages = base64Images.filter(
+        (img): img is string => img !== null
+      );
 
+      if (validImages.length !== inputImages.length) {
+        throw new Error("일부 이미지를 처리할 수 없습니다.");
+      }
+
+      const feedback = await getUXFeedback(validImages);
+
+      // 이미지 URL을 base64 문자열로 저장
       const initialMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "assistant",
         content: feedback,
         timestamp: Date.now(),
-        imageUrls: inputImages.map((img) => img.preview),
+        imageUrls: validImages, // base64 이미지 문자열 사용
       };
 
       const newSessionId = await createChatSession(userId, initialMessage);
       setSessionId(newSessionId);
       setMessages([initialMessage]);
     } catch (error) {
+      console.error("Error in generateInitialFeedback:", error);
       onError?.(error as Error);
+      setHasStartedAnalysis(false);
     } finally {
       setIsLoading(false);
     }
@@ -150,12 +167,23 @@ export function UXAgentChat({
       await saveChatMessage(userId, sessionId, userMessage);
       setInputMessage("");
 
+      // File 객체에서 직접 Base64 문자열 생성
+      const base64Images = await Promise.all(
+        inputImages.map(async (img) => {
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(img.file);
+          });
+        })
+      );
+
       const response = await chatWithUXAgent(
         messages.concat(userMessage).map((m) => ({
           role: m.role,
           content: m.content,
         })),
-        inputImages.map((img) => img.preview)
+        base64Images
       );
 
       const assistantMessage: ChatMessage = {
@@ -198,15 +226,41 @@ export function UXAgentChat({
                 <div className="border-t border-gray-300 my-2" />
               )}
               <p className="whitespace-pre-wrap">{message.content}</p>
-              {message.imageUrls && (
-                <div className="mt-2 flex gap-2 flex-wrap">
-                  {message.imageUrls.map((url, i) => (
-                    <img
-                      key={i}
-                      src={url}
-                      alt={`Reference ${i + 1}`}
-                      className="w-20 h-20 object-cover rounded"
-                    />
+              {message.imageUrls && message.imageUrls.length > 0 && (
+                <div className="mt-2 space-y-4">
+                  {Array.from({
+                    length: Math.ceil(message.imageUrls.length / 3),
+                  }).map((_, groupIndex) => (
+                    <div key={groupIndex} className="flex gap-2 flex-wrap">
+                      {message.imageUrls
+                        ?.slice(groupIndex * 3, (groupIndex + 1) * 3)
+                        .map((url, i) => {
+                          const imageUrl = url.startsWith("data:image")
+                            ? url
+                            : message.role === "assistant"
+                            ? url
+                            : inputImages[groupIndex * 3 + i]?.file
+                            ? URL.createObjectURL(
+                                inputImages[groupIndex * 3 + i].file
+                              )
+                            : url;
+
+                          return (
+                            <img
+                              key={groupIndex * 3 + i}
+                              src={imageUrl}
+                              alt={`Reference ${groupIndex * 3 + i + 1}`}
+                              className="w-20 h-20 object-cover rounded"
+                              onError={(e) => {
+                                console.error(
+                                  `Error loading image: ${imageUrl}`
+                                );
+                                e.currentTarget.src = "/placeholder-image.png";
+                              }}
+                            />
+                          );
+                        })}
+                    </div>
                   ))}
                 </div>
               )}

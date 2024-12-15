@@ -2,6 +2,7 @@ export interface ImageData {
   file: File;
   preview: string;
   id: string;
+  blob?: Blob;
 }
 
 export interface ServerConfig {
@@ -17,6 +18,7 @@ export interface Rating {
 
 export interface ReferenceSet {
   id: string;
+  modelType: "baseline" | "our";
   inputImages: {
     id: string;
     url: string;
