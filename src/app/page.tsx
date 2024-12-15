@@ -318,7 +318,11 @@ function HomeContent() {
                   </div>
 
                   <div className="w-3/5">
-                    <ImagePreview images={inputImages} onRemove={removeImage} />
+                    <ImagePreview
+                      images={inputImages}
+                      onRemove={removeImage}
+                      isLoading={isLoading}
+                    />
                   </div>
                 </div>
               </div>
@@ -348,6 +352,7 @@ function HomeContent() {
                       video={inputVideo}
                       onVideoEdit={handleVideoEdit}
                       onRemove={removeImage}
+                      isLoading={isLoading}
                     />
                   </div>
                 </div>

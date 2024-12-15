@@ -17,6 +17,7 @@ interface VideoPreviewProps {
   onVideoEdit: (inputImages: File[]) => void;
   onRemove: (id: string) => void;
   video: File | null;
+  isLoading: boolean;
 }
 
 export function VideoPreview({
@@ -24,6 +25,7 @@ export function VideoPreview({
   onVideoEdit,
   onRemove,
   video,
+  isLoading,
 }: VideoPreviewProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [chosenTimes, setChosenTimes] = useState<Array<number | null>>([
@@ -174,6 +176,7 @@ export function VideoPreview({
         onClick={(e) => {
           e.stopPropagation();
           if (!video) alert("Please upload the video first.");
+          if (isLoading) return;
           setShowEditModal(true);
         }}
       >
@@ -232,7 +235,7 @@ export function VideoPreview({
             </span>
           </div>
         ))}
-        {images.length > 0 && (
+        {images.length > 0 && !isLoading && (
           <button
             onClick={(e) => {
               e.stopPropagation();
