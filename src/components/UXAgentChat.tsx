@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ChatMessage } from "@/types";
+import { ChatMessage, ImageData } from "@/types";
 import { getUXFeedback, chatWithUXAgent } from "@/utils/ai-utils";
 import {
   saveChatMessage,
@@ -233,7 +233,7 @@ export function UXAgentChat({
                   }).map((_, groupIndex) => (
                     <div key={groupIndex} className="flex gap-2 flex-wrap">
                       {message.imageUrls
-                        .slice(groupIndex * 3, (groupIndex + 1) * 3)
+                        ?.slice(groupIndex * 3, (groupIndex + 1) * 3)
                         .map((url, i) => {
                           const imageUrl = url.startsWith("data:image")
                             ? url

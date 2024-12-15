@@ -39,6 +39,7 @@ function HomeContent() {
   const [currentReferenceSet, setCurrentReferenceSet] =
     useState<ReferenceSet | null>(null);
   const [shouldStartAnalysis, setShouldStartAnalysis] = useState(false);
+  const [useBaseline, setUseBaseline] = useState(false);
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
@@ -109,7 +110,10 @@ function HomeContent() {
 
     try {
       // 1. 서버에 이미지 분석 요청
-      const images = await sendImages(inputImages.map((img) => img.file));
+      const images = await sendImages(
+        inputImages.map((img) => img.file),
+        useBaseline
+      );
 
       // 2. 결과 이미지 설정
       const resultImageUrls = images.map(
@@ -122,6 +126,7 @@ function HomeContent() {
       // 3. ReferenceSet 생성 및 저장
       const newReferenceSet: ReferenceSet = {
         id: Date.now().toString(),
+        modelType: useBaseline ? "baseline" : "our",
         inputImages: inputImages.map((img) => ({
           id: img.id,
           url: img.preview,
@@ -183,6 +188,31 @@ function HomeContent() {
   return (
     <div className="container mx-auto px-8">
       <div className="flex gap-8 h-[calc(100vh-8rem)]">
+        <div className="absolute top-4 right-4 flex gap-2">
+          <button
+            onClick={() => setUseBaseline(false)}
+            className={`px-4 py-2 rounded-lg font-medium shadow-md transition-all
+              ${
+                !useBaseline
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-300 hover:bg-gray-200"
+              }`}
+          >
+            Our Model
+          </button>
+          <button
+            onClick={() => setUseBaseline(true)}
+            className={`px-4 py-2 rounded-lg font-medium shadow-md transition-all
+              ${
+                useBaseline
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-300 hover:bg-gray-200"
+              }`}
+          >
+            Baseline Model
+          </button>
+        </div>
+
         <div className="w-[55%] flex flex-col gap-4">
           <section className="bg-white rounded-2xl shadow-lg p-6 h-[calc(45%-0.5rem)]">
             <h2 className="text-xl font-semibold mb-4 text-gray-700 flex items-center gap-2">

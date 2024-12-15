@@ -18,6 +18,7 @@ export interface Rating {
 
 export interface ReferenceSet {
   id: string;
+  modelType: "baseline" | "our";
   inputImages: {
     id: string;
     url: string;
