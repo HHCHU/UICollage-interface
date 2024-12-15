@@ -27,6 +27,22 @@ export function ResultSection({
     setShowRating(false);
   };
 
+  const handleNavigateImage = (direction: "prev" | "next") => {
+    if (!selectedImage) return;
+
+    const currentIndex = images.indexOf(selectedImage);
+    const currentSetIndex = Math.floor(currentIndex / 3);
+    const currentPositionInSet = currentIndex % 3;
+
+    if (direction === "prev" && currentPositionInSet > 0) {
+      // 이전 이미지로 이동 (같은 세트 내에서)
+      setSelectedImage(images[currentIndex - 1]);
+    } else if (direction === "next" && currentPositionInSet < 2) {
+      // 다음 이미지로 이동 (같은 세트 내에서)
+      setSelectedImage(images[currentIndex + 1]);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
@@ -176,6 +192,56 @@ export function ResultSection({
               fill
               className="object-contain"
             />
+
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-4">
+              {images.indexOf(selectedImage) % 3 !== 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNavigateImage("prev");
+                  }}
+                  className="bg-white/80 hover:bg-white rounded-full p-2 transition-colors"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-800"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+              )}
+              {images.indexOf(selectedImage) % 3 !== 2 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNavigateImage("next");
+                  }}
+                  className="bg-white/80 hover:bg-white rounded-full p-2 transition-colors ml-auto"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-800"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+
             <button
               className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg
                 hover:bg-gray-100 transition-colors"

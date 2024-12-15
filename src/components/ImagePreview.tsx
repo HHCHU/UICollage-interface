@@ -10,6 +10,20 @@ interface ImagePreviewProps {
 export function ImagePreview({ images, onRemove }: ImagePreviewProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  const handleNavigateImage = (direction: "prev" | "next") => {
+    if (!selectedImage) return;
+
+    const currentIndex = images.findIndex(
+      (img) => img.preview === selectedImage
+    );
+
+    if (direction === "prev" && currentIndex > 0) {
+      setSelectedImage(images[currentIndex - 1].preview);
+    } else if (direction === "next" && currentIndex < images.length - 1) {
+      setSelectedImage(images[currentIndex + 1].preview);
+    }
+  };
+
   return (
     <>
       <div className="grid grid-cols-3 gap-2 h-full">
@@ -106,6 +120,59 @@ export function ImagePreview({ images, onRemove }: ImagePreviewProps) {
               fill
               className="object-contain"
             />
+
+            {/* 네비게이션 버튼 */}
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-4">
+              {images.findIndex((img) => img.preview === selectedImage) > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNavigateImage("prev");
+                  }}
+                  className="bg-white/80 hover:bg-white rounded-full p-2 transition-colors"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-800"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+              )}
+              {images.findIndex((img) => img.preview === selectedImage) <
+                images.length - 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNavigateImage("next");
+                  }}
+                  className="bg-white/80 hover:bg-white rounded-full p-2 transition-colors ml-auto"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-800"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* 기존 닫기 버튼 */}
             <button
               className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg
                 hover:bg-gray-100 transition-colors"
