@@ -27,7 +27,7 @@ function TabController(props: TabControllerProps) {
             : "text-gray-600 hover:text-gray-800"
         }`}
       >
-        영상
+        비디오
       </button>
     </div>
   );

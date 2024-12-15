@@ -165,12 +165,12 @@ export function VideoPreview({
   const canSave = chosenTimes.filter((t) => t !== null).length === 3;
 
   return (
-    <div className="group-preview">
+    <div className="h-full flex flex-col">
       <div
         className="grid grid-cols-3 gap-2 p-2 group relative
-        rounded-xl overflow-hidden shadow-md border-2 border-blue-100
+        rounded-xl overflow-hidden border-2
         hover:border-blue-300 transition-all duration-200 bg-white
-        cursor-pointer hover:scale-[1.02]"
+        cursor-pointer hover:scale-[1.02] box-border"
         onClick={(e) => {
           e.stopPropagation();
           if (!video) alert("Please upload the video first.");
@@ -185,33 +185,35 @@ export function VideoPreview({
           >
             <div
               className="absolute top-2 left-2 z-10 bg-blue-500 text-white 
-              rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium"
+            rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium"
             >
               {idx + 1}
             </div>
-            <Image
-              src={image.preview}
-              alt={`Preview ${idx + 1}`}
-              fill
-              className="object-contain"
-            />
+            <div className="relative w-full h-full">
+              <Image
+                src={image.preview}
+                alt="Input image"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+            </div>
           </div>
         ))}
         {[...Array(3 - images.length)].map((_, index) => (
-          <button
+          <div
             key={`empty-${index}`}
             className="bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 
-              flex flex-col items-center justify-center relative gap-2"
-            style={{ aspectRatio: "9/16" }}
+          flex flex-col items-center justify-center relative gap-1 aspect-[9/16]"
           >
             <div
               className="absolute top-2 left-2 z-10 bg-gray-300 text-white 
-              rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium"
+          rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium"
             >
               {images.length + index + 1}
             </div>
             <svg
-              className="w-8 h-8 text-gray-300"
+              className="w-6 h-6 text-gray-300"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -223,10 +225,12 @@ export function VideoPreview({
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            <span className="text-gray-400 text-sm text-center">
-              Add <br /> Image {images.length + index + 1}
+            <span className="text-xs text-gray-400 text-center">
+              {images.length + index + 1}번째
+              <br />
+              이미지
             </span>
-          </button>
+          </div>
         ))}
         {images.length > 0 && (
           <button
@@ -318,9 +322,12 @@ export function VideoPreview({
                     </div>
                     <button
                       onClick={() => markFrameForSlot(slotIndex)}
-                      className="mt-2 px-3 py-1 rounded bg-blue-500 hover:bg-blue-600 text-white text-sm"
+                      className="mt-2 px-3 py-1 rounded bg-blue-500 hover:bg-blue-600 
+                      text-white text-sm rounded-lg"
                     >
-                      {isMarked ? "Edit Mark" : "Add Mark"}
+                      {isMarked
+                        ? `Edit Mark ${slotIndex + 1}`
+                        : `Add Mark ${slotIndex + 1}`}
                     </button>
                   </div>
                 );
@@ -331,7 +338,7 @@ export function VideoPreview({
               <button
                 onClick={handleSave}
                 disabled={!canSave}
-                className={`px-4 py-2 rounded text-white ${
+                className={`px-4 py-2 rounded text-white rounded-lg ${
                   canSave
                     ? "bg-blue-500 hover:bg-blue-600"
                     : "bg-gray-300 cursor-not-allowed"

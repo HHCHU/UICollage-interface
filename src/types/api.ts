@@ -10,3 +10,24 @@ export interface ImageUploadRequest {
 export interface ServerConfig {
   host: string;
 }
+
+export interface GeminiMessage {
+  role: "user" | "model";
+  parts: {
+    text?: string;
+    inlineData?: {
+      mimeType: string;
+      data: string;
+    };
+  }[];
+}
+
+export interface GeminiResponse {
+  candidates: {
+    content: {
+      parts: {
+        text: string;
+      }[];
+    };
+  }[];
+}
