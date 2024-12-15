@@ -302,13 +302,16 @@ function HomeContent() {
                   shouldStartAnalysis={shouldStartAnalysis}
                   onError={(error) => {
                     console.error("UX Agent Error:", error);
-                    alert("UX 에이전트와의 대화 중 오류가 발생했습니다.");
+                    alert(
+                      "이미지 분석 중 오류가 발생했습니다. 다시 시도해 주세요."
+                    );
+                    setShouldStartAnalysis(false); // 분석 상태 초기화
                   }}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center">
                   <p className="text-gray-400 text-center">
-                    이미지를 업로드하면 UX 연구원이 조언을 제공합니다.
+                    이미지를 업로드하면 UX 에이전트가 조언을 제공합니다.
                   </p>
                 </div>
               )}
