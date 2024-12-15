@@ -1,6 +1,8 @@
 import { APIResponse } from "@/types/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://143.248.48.96:7887";
+const BASELINE_ENDPOINT = "/calculation-baseline";
+const OUR_MODEL_ENDPOINT = "/calculation";
 
 // 서버 연결 검증용 ping
 export const pingServer = async (): Promise<string> => {
@@ -47,14 +49,23 @@ export const sendImageTest = async (): Promise<string[]> => {
 };
 
 // 실제 이미지 처리 요청
-export const sendImages = async (files: File[]): Promise<string[]> => {
+export const sendImages = async (
+  files: File[],
+  useBaseline: boolean = false
+): Promise<string[]> => {
   try {
     console.log("Converting files to base64...");
     const base64Images = await Promise.all(files.map(fileToBase64));
     console.log("Files converted successfully");
 
-    console.log("Sending images to server...");
-    const response = await fetch(`${API_URL}/calculation`, {
+    const endpoint = useBaseline ? BASELINE_ENDPOINT : OUR_MODEL_ENDPOINT;
+    console.log(
+      `Sending images to server using ${
+        useBaseline ? "baseline" : "our"
+      } model...`
+    );
+
+    const response = await fetch(`${API_URL}${endpoint}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

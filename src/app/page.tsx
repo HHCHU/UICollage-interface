@@ -11,7 +11,6 @@ import { ImageUploader } from "@/components/ImageUploader";
 import { ImagePreview } from "@/components/ImagePreview";
 import { ResultSection } from "@/components/ResultSection";
 import { ImageData, Rating, ReferenceSet, TabName, VideoData } from "@/types";
-import { ServerConfig } from "@/types/api";
 import { sendImages } from "@/utils/api";
 import { saveReferenceSet, saveRating } from "@/utils/firebase";
 import { useSearchParams } from "next/navigation";
@@ -53,6 +52,7 @@ function HomeContent() {
   const [activeTab, setActiveTab] = useState<TabName.Image | TabName.Video>(
     TabName.Image
   );
+  const [useBaseline, setUseBaseline] = useState(false);
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
@@ -234,7 +234,10 @@ function HomeContent() {
 
     try {
       // 1. 서버에 이미지 분석 요청
-      const images = await sendImages(inputImages.map((img) => img.file));
+      const images = await sendImages(
+        inputImages.map((img) => img.file),
+        useBaseline
+      );
 
       const resultImageUrls = images.map(
         (img) => `data:image/jpg;base64,${img}`
@@ -245,6 +248,7 @@ function HomeContent() {
 
       const newReferenceSet: ReferenceSet = {
         id: Date.now().toString(),
+        modelType: useBaseline ? "baseline" : "our",
         inputImages: inputImages.map((img) => ({
           id: img.id,
           url: img.preview,
@@ -304,6 +308,31 @@ function HomeContent() {
   return (
     <div className="container mx-auto px-8">
       <div className="flex gap-8 h-[calc(100vh-8rem)]">
+        <div className="absolute top-4 right-4 flex gap-2">
+          <button
+            onClick={() => setUseBaseline(false)}
+            className={`px-4 py-2 rounded-lg font-medium shadow-md transition-all
+              ${
+                !useBaseline
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-300 hover:bg-gray-200"
+              }`}
+          >
+            Condition A
+          </button>
+          <button
+            onClick={() => setUseBaseline(true)}
+            className={`px-4 py-2 rounded-lg font-medium shadow-md transition-all
+              ${
+                useBaseline
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-300 hover:bg-gray-200"
+              }`}
+          >
+            Condition B
+          </button>
+        </div>
+
         <div className="w-[55%] flex flex-col gap-4">
           <section className="bg-white rounded-2xl shadow-lg p-6 h-[calc(50%-0.5rem)]">
             <TabController activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -396,13 +425,16 @@ function HomeContent() {
                   shouldStartAnalysis={shouldStartAnalysis}
                   onError={(error) => {
                     console.error("UX Agent Error:", error);
-                    alert("UX 에이전트와의 대화 중 오류가 발생했습니다.");
+                    alert(
+                      "이미지 분석 중 오류가 발생했습니다. 다시 시도해 주세요."
+                    );
+                    setShouldStartAnalysis(false); // 분석 상태 초기화
                   }}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center">
                   <p className="text-gray-400 text-center">
-                    이미지를 업로드하면 UX 연구원이 조언을 제공합니다.
+                    이미지를 업로드하면 UX 에이전트가 조언을 제공합니다.
                   </p>
                 </div>
               )}
