@@ -52,7 +52,7 @@ function HomeContent() {
   const [activeTab, setActiveTab] = useState<TabName.Image | TabName.Video>(
     TabName.Image
   );
-  const [useBaseline, setUseBaseline] = useState(false);
+  const [useBaseline, setUseBaseline] = useState(true);
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
@@ -301,7 +301,6 @@ function HomeContent() {
   };
 
   const setBaselineCondition = (useBaseline: boolean) => {
-    // [CAUTION] 이미지를 초기화 - 로직 (및 서버) 확인 바람
     setUseBaseline(useBaseline);
     setInputImages([]);
     setResultImages([]);
@@ -331,10 +330,10 @@ function HomeContent() {
       <div className="flex gap-8 h-[calc(100vh-8rem)]">
         <div className="absolute top-4 right-4 flex gap-2">
           <button
-            onClick={() => setBaselineCondition(false)}
+            onClick={() => setBaselineCondition(true)}
             className={`px-4 py-2 rounded-lg font-medium shadow-md transition-all
               ${
-                !useBaseline
+                useBaseline
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 text-gray-300 hover:bg-gray-200"
               }`}
@@ -343,10 +342,10 @@ function HomeContent() {
             Condition A
           </button>
           <button
-            onClick={() => setBaselineCondition(true)}
+            onClick={() => setBaselineCondition(false)}
             className={`px-4 py-2 rounded-lg font-medium shadow-md transition-all
               ${
-                useBaseline
+                !useBaseline
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 text-gray-300 hover:bg-gray-200"
               }`}
