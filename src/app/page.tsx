@@ -67,7 +67,7 @@ function HomeContent() {
     }
 
     if (inputImages.length + files.length > 3) {
-      alert("최대 3개의 이미지만 선택할 수 있습니다.");
+      alert("최대 3개의 이미지만 선택할 �� 있습니다.");
       return;
     }
 
@@ -445,12 +445,13 @@ function HomeContent() {
                   inputImages={inputImages}
                   referenceImages={resultImages}
                   shouldStartAnalysis={shouldStartAnalysis}
+                  useBaseline={useBaseline}
                   onError={(error) => {
                     console.error("UX Agent Error:", error);
                     alert(
                       "이미지 분석 중 오류가 발생했습니다. 다시 시도해 주세요."
                     );
-                    setShouldStartAnalysis(false); // 분석 상태 초기화
+                    setShouldStartAnalysis(false);
                   }}
                 />
               ) : (

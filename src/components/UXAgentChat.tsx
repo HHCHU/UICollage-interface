@@ -13,6 +13,7 @@ interface UXAgentChatProps {
   referenceImages?: string[];
   onError?: (error: Error) => void;
   shouldStartAnalysis?: boolean;
+  useBaseline: boolean;
 }
 
 export function UXAgentChat({
@@ -21,6 +22,7 @@ export function UXAgentChat({
   referenceImages,
   onError,
   shouldStartAnalysis = false,
+  useBaseline,
 }: UXAgentChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -61,7 +63,7 @@ export function UXAgentChat({
     try {
       setIsLoading(true);
 
-      // File 객체에서 직접 Base64 문자열 생성
+      // File ��체에서 직접 Base64 문자열 생성
       const base64Images = await Promise.all(
         inputImages.map(async (img) => {
           try {
@@ -131,7 +133,12 @@ export function UXAgentChat({
         })
       );
 
-      const feedback = await getUXFeedback(base64Images, undefined, true);
+      const feedback = await getUXFeedback(
+        base64Images,
+        undefined,
+        true,
+        useBaseline
+      );
 
       const referenceMessage: ChatMessage = {
         id: Date.now().toString(),

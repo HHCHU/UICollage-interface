@@ -5,7 +5,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export async function getUXFeedback(
   imageUrls: string[],
   prompt?: string,
-  isReference: boolean = false
+  isReference: boolean = false,
+  isBaseline: boolean = false
 ): Promise<string> {
   try {
     const processedImages = await Promise.all(
@@ -32,6 +33,7 @@ export async function getUXFeedback(
         images: processedImages,
         prompt,
         isReference,
+        isBaseline,
       }),
     });
 
